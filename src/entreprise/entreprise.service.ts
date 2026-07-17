@@ -191,7 +191,7 @@ export class EntrepriseService {
       throw new ForbiddenException('Cette candidature n appartient pas a votre entreprise');
     }
 
-    return this.prisma.entretien.create({
+    const entretien = await this.prisma.entretien.create({
       data: {
         partenaireId: partenaire.id,
         candidatureId: candidature.id,
@@ -203,6 +203,17 @@ export class EntrepriseService {
         message: donnees.message ?? null,
       },
     });
+
+    await this.prisma.notification.create({
+      data: {
+        utilisateurId: candidature.utilisateurId,
+        titre: 'Entretien planifié',
+        message: `Un entretien a été planifié pour le ${new Date(donnees.dateProposee).toLocaleDateString('fr-FR')}.`,
+        type: 'ENTRETIEN',
+      },
+    });
+
+    return entretien;
   }
 
   private async getOrCreatePartner(utilisateur: EntrepriseUser, ville: string) {

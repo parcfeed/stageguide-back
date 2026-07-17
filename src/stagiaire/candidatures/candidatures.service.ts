@@ -49,7 +49,7 @@ export class CandidaturesService {
       throw new NotFoundException('Offre introuvable.');
     }
 
-    return this.prisma.candidature.create({
+    const candidature = await this.prisma.candidature.create({
       data: {
         utilisateurId,
         offreStageId,
@@ -66,5 +66,25 @@ export class CandidaturesService {
         },
       },
     });
+
+    const partenaireId = candidature.offreStage?.partenaireId ?? candidature.offreEmploi?.partenaireId;
+    if (partenaireId) {
+      const partenaire = await this.prisma.partner.findUnique({
+        where: { id: partenaireId },
+        select: { userId: true },
+      });
+      if (partenaire?.userId) {
+        await this.prisma.notification.create({
+          data: {
+            utilisateurId: partenaire.userId,
+            titre: 'Nouvelle candidature',
+            message: `${candidature.utilisateur.prenom} ${candidature.utilisateur.nom} a postulé à une offre.`,
+            type: 'CANDIDATURE',
+          },
+        });
+      }
+    }
+
+    return candidature;
   }
 }
