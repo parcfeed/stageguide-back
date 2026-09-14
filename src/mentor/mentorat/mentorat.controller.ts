@@ -1,11 +1,13 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { UserRole } from '../../users/enums/user-role.enum';
+import { PlanifierSessionMentoratDto } from './dto/planifier-session-mentorat.dto';
 import { RepondreDemandeMentoratDto } from './dto/repondre-demande-mentorat.dto';
+import { SoumettreEvaluationDto } from './dto/soumettre-evaluation.dto';
 import { MentoratMentorService } from './mentorat.service';
 
 @ApiTags('mentor')
@@ -31,5 +33,33 @@ export class MentoratMentorController {
     @Body() donnees: RepondreDemandeMentoratDto,
   ) {
     return this.mentoratService.repondre(utilisateur.id, demandeId, donnees);
+  }
+
+  @ApiOperation({ summary: 'Planifie une session de mentorat avec un stagiaire' })
+  @Post('sessions')
+  async planifierSession(
+    @CurrentUser() utilisateur: { id: string },
+    @Body() donnees: PlanifierSessionMentoratDto,
+  ) {
+    return this.mentoratService.planifierSession(utilisateur.id, donnees);
+  }
+
+  @ApiOperation({ summary: 'Soumet une evaluation pour un stagiaire mentoré' })
+  @Post('evaluations')
+  async soumettreEvaluation(
+    @CurrentUser() utilisateur: { id: string },
+    @Body() donnees: SoumettreEvaluationDto,
+  ) {
+    return this.mentoratService.soumettreEvaluation(utilisateur.id, donnees);
+  }
+
+  @ApiOperation({ summary: 'Exporte une session de mentorat au format iCal (.ics)' })
+  @ApiParam({ name: 'id', description: 'Identifiant de la session de mentorat' })
+  @Get('sessions/:id/ical')
+  async exportIcal(
+    @CurrentUser() utilisateur: { id: string },
+    @Param('id') sessionId: string,
+  ) {
+    return this.mentoratService.exportIcalSession(utilisateur.id, sessionId);
   }
 }

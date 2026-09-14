@@ -21,4 +21,11 @@ export class TableauDeBordController {
   async getVueEnsemble(@CurrentUser() utilisateur: { id: string }) {
     return this.tableauDeBordService.getVueEnsemble(utilisateur.id);
   }
+
+  @ApiOperation({ summary: 'Recupere le calendrier collaboratif du stagiaire' })
+  @ApiResponse({ status: 200, description: 'Calendrier retourne avec succes' })
+  @Get('calendrier')
+  async getCalendrier(@CurrentUser() utilisateur: { id: string }) {
+    return this.tableauDeBordService.getCalendrier(utilisateur.id);
+  }
 }

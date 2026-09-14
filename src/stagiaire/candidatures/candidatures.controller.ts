@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -29,5 +29,15 @@ export class CandidaturesController {
     @Body() donnees: CreerCandidatureDto,
   ) {
     return this.candidaturesService.creer(utilisateur.id, donnees);
+  }
+
+  @ApiOperation({ summary: 'Annule une candidature' })
+  @ApiParam({ name: 'id', description: 'Identifiant de la candidature' })
+  @Patch(':id/annuler')
+  async annuler(
+    @CurrentUser() utilisateur: { id: string },
+    @Param('id') candidatureId: string,
+  ) {
+    return this.candidaturesService.annuler(utilisateur.id, candidatureId);
   }
 }

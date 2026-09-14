@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ChangerStatutConventionDto } from './dto/changer-statut-convention.dto';
 import { CreerConventionDto } from './dto/creer-convention.dto';
 
 @Injectable()
@@ -43,6 +44,36 @@ export class ConventionsService {
       dateDebut: convention.dateDebut,
       dateFin: convention.dateFin,
       message: 'Convention creee avec succes',
+    };
+  }
+
+  async changerStatut(
+    stagiaireId: string,
+    conventionId: string,
+    donnees: ChangerStatutConventionDto,
+  ) {
+    const convention = await this.prisma.convention.findFirst({
+      where: { id: conventionId, utilisateurId: stagiaireId },
+    });
+
+    if (!convention) {
+      throw new NotFoundException('Convention introuvable');
+    }
+
+    const miseAJour = await this.prisma.convention.update({
+      where: { id: conventionId },
+      data: { statut: donnees.statut },
+    });
+
+    return {
+      id: miseAJour.id,
+      stagiaireId: miseAJour.utilisateurId,
+      statut: miseAJour.statut,
+      entrepriseNom: miseAJour.entrepriseNom,
+      mentorNom: miseAJour.mentorNom,
+      dateDebut: miseAJour.dateDebut,
+      dateFin: miseAJour.dateFin,
+      message: 'Statut de la convention mis à jour avec succès',
     };
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreerCandidatureDto } from './dto/creer-candidature.dto';
 
@@ -86,5 +86,33 @@ export class CandidaturesService {
     }
 
     return candidature;
+  }
+
+  async annuler(utilisateurId: string, candidatureId: string) {
+    const candidature = await this.prisma.candidature.findFirst({
+      where: { id: candidatureId, utilisateurId },
+    });
+
+    if (!candidature) {
+      throw new NotFoundException('Candidature introuvable');
+    }
+
+    const statutsAnnulables = ['EN_ATTENTE', 'EN_COURS'];
+    if (!statutsAnnulables.includes(candidature.statut)) {
+      throw new BadRequestException(
+        `Impossible d'annuler une candidature avec le statut "${candidature.statut}"`,
+      );
+    }
+
+    const updated = await this.prisma.candidature.update({
+      where: { id: candidatureId },
+      data: { statut: 'ANNULEE' },
+    });
+
+    return {
+      id: updated.id,
+      statut: updated.statut,
+      message: 'Candidature annulée avec succès',
+    };
   }
 }

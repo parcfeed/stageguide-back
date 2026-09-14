@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { CorrespondanceModule } from './correspondance/correspondance.module';
 import { EntrepriseModule } from './entreprise/entreprise.module';
 import { FichiersModule } from './fichiers/fichiers.module';
+import { ReseauModule } from './reseau/reseau.module';
 import { MentorModule } from './mentor/mentor.module';
 import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -28,6 +29,7 @@ import { UsersModule } from './users/users.module';
     MessagesModule,
     NotificationsModule,
     FichiersModule,
+    ReseauModule,
   ],
 })
 export class AppModule {}

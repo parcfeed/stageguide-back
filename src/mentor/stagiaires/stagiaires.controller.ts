@@ -20,4 +20,10 @@ export class StagiairesController {
   async lister(@CurrentUser() utilisateur: { id: string }) {
     return this.stagiairesService.lister(utilisateur.id);
   }
+
+  @ApiOperation({ summary: 'Vue synthétique du tableau de bord mentor' })
+  @Get('tableau-de-bord')
+  async getTableauDeBord(@CurrentUser() utilisateur: { id: string }) {
+    return this.stagiairesService.getTableauDeBord(utilisateur.id);
+  }
 }

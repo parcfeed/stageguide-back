@@ -107,12 +107,17 @@ model User {
   sessionsMentoratCommeMentor SessionMentorat[] @relation("SessionsMentoratMentor")
   evaluationsMentoratRecues EvaluationMentorat[] @relation("EvaluationsMentoratStagiaire")
   evaluationsMentoratDonnees EvaluationMentorat[] @relation("EvaluationsMentoratMentor")
+  evaluationsCroiseesRecues EvaluationCroisee[] @relation("EvaluationsCroiseesStagiaire")
   documents        Document[]
   signaturesConvention SignatureConvention[]
   participationsConversation ParticipantConversation[]
   messagesEnvoyes  MessageConversation[]
   entretiens       Entretien[]
   partner         Partner?
+  connexionsDemandees ConnexionReseau[] @relation("ConnexionsDemandees")
+  connexionsRecues ConnexionReseau[] @relation("ConnexionsRecues")
+  sujetsForum     SujetForum[]
+  reponsesForum   ReponseForum[]
 
   @@index([email])
   @@index([isActive, deletedAt])
@@ -162,6 +167,7 @@ model Partner {
   offresEmploi       OffreEmploi[]
   conventions        Convention[]
   entretiens         Entretien[]
+  evaluationsCroisees EvaluationCroisee[]
 
   @@index([nomEntreprise])
   @@index([ville])
@@ -264,6 +270,7 @@ model Candidature {
   offreStage    OffreStage?        @relation(fields: [offreStageId], references: [id], onDelete: SetNull)
   offreEmploi   OffreEmploi?       @relation(fields: [offreEmploiId], references: [id], onDelete: SetNull)
   entretiens     Entretien[]
+  evaluationsCroisees EvaluationCroisee[]
 
   @@index([utilisateurId, statut])
   @@index([offreStageId])
@@ -292,6 +299,24 @@ model Entretien {
 
   @@index([partenaireId, statut])
   @@map("entretiens")
+}
+
+model EvaluationCroisee {
+  id            String      @id @default(uuid())
+  stagiaireId   String
+  partenaireId  String
+  candidatureId String?
+  note          Int
+  commentaire   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  stagiaire     User        @relation("EvaluationsCroiseesStagiaire", fields: [stagiaireId], references: [id], onDelete: Cascade)
+  partenaire    Partner     @relation(fields: [partenaireId], references: [id], onDelete: Cascade)
+  candidature   Candidature? @relation(fields: [candidatureId], references: [id], onDelete: SetNull)
+
+  @@index([stagiaireId, partenaireId])
+  @@index([partenaireId, createdAt])
+  @@map("evaluations_croisees")
 }
 
 model Convention {
@@ -327,6 +352,7 @@ model Formation {
   updatedAt    DateTime @updatedAt
   inscriptions InscriptionFormation[]
   modules      ModuleFormation[]
+  sujetsForum  SujetForum[]
 
   @@index([titre])
   @@map("formations")
@@ -592,6 +618,8 @@ model MessageConversation {
   conversationId  String
   expediteurId    String
   contenu         String
+  fichierId       String?
+  lienRessource   String?
   estSysteme      Boolean  @default(false)
   creeLe          DateTime @default(now())
   conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -601,3 +629,51 @@ model MessageConversation {
   @@index([expediteurId])
   @@map("messages_conversation")
 }
+
+model ConnexionReseau {
+  id              String   @id @default(uuid())
+  demandeurId     String
+  receveurId      String
+  statut          String   @default("EN_ATTENTE")
+  message         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  demandeur       User     @relation("ConnexionsDemandees", fields: [demandeurId], references: [id], onDelete: Cascade)
+  receveur        User     @relation("ConnexionsRecues", fields: [receveurId], references: [id], onDelete: Cascade)
+
+  @@unique([demandeurId, receveurId])
+  @@index([demandeurId, statut])
+  @@index([receveurId, statut])
+  @@map("connexions_reseau")
+}
+
+model SujetForum {
+  id            String   @id @default(uuid())
+  formationId   String
+  auteurId      String
+  titre         String
+  contenu       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  formation     Formation @relation(fields: [formationId], references: [id], onDelete: Cascade)
+  auteur        User      @relation(fields: [auteurId], references: [id], onDelete: Cascade)
+  reponses      ReponseForum[]
+
+  @@index([formationId, createdAt])
+  @@map("sujets_forum")
+}
+
+model ReponseForum {
+  id            String   @id @default(uuid())
+  sujetId       String
+  auteurId      String
+  contenu       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  sujet         SujetForum @relation(fields: [sujetId], references: [id], onDelete: Cascade)
+  auteur        User       @relation(fields: [auteurId], references: [id], onDelete: Cascade)
+
+  @@index([sujetId, createdAt])
+  @@map("reponses_forum")
+}
+

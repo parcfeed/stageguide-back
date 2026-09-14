@@ -120,11 +120,102 @@ export class TableauDeBordService {
       take: 5,
     });
 
+    const rappels = await Promise.all([
+      this.prisma.convention.findMany({
+        where: { utilisateurId, dateFin: { not: null } },
+        select: {
+          id: true,
+          entrepriseNom: true,
+          dateFin: true,
+        },
+        orderBy: { dateFin: 'asc' },
+        take: 5,
+      }),
+      this.prisma.offreSauvegardee.findMany({
+        where: { utilisateurId },
+        include: {
+          offreStage: {
+            select: { id: true, titre: true, dateExpiration: true },
+          },
+          offreEmploi: {
+            select: { id: true, titre: true, dateExpiration: true },
+          },
+        },
+      }),
+    ]).then(([conventions, offresSauvegardees]) => {
+      const rappelsConventions = conventions
+        .filter((convention) => convention.dateFin)
+        .map((convention) => ({
+          id: convention.id,
+          type: 'CONVENTION',
+          titre: `Convention ${convention.entrepriseNom}`,
+          dateEcheance: convention.dateFin,
+          message: 'Échéance de convention à venir',
+        }));
+
+      const rappelsOffres = offresSauvegardees
+        .flatMap((saved) => {
+          const offres = [saved.offreStage, saved.offreEmploi].filter(Boolean) as Array<{
+            id: string;
+            titre: string;
+            dateExpiration: Date | null;
+          }>;
+
+          return offres
+            .filter((offre) => offre.dateExpiration)
+            .map((offre) => ({
+              id: offre.id,
+              type: 'OFFRE',
+              titre: offre.titre,
+              dateEcheance: offre.dateExpiration,
+              message: 'Date limite de candidature',
+            }));
+        })
+        .sort((a, b) => new Date(a.dateEcheance ?? 0).getTime() - new Date(b.dateEcheance ?? 0).getTime())
+        .slice(0, 5);
+
+      return [...rappelsConventions, ...rappelsOffres].sort(
+        (a, b) => new Date(a.dateEcheance ?? 0).getTime() - new Date(b.dateEcheance ?? 0).getTime(),
+      );
+    });
+
     const notificationsRecentes = await this.prisma.notification.findMany({
       where: { utilisateurId },
       orderBy: { createdAt: 'desc' },
       take: 5,
     });
+
+    const rapportPdf = {
+      format: 'pdf',
+      documentType: 'rapport-stagiaire',
+      generatedAt: new Date().toISOString(),
+      url: null,
+      sections: [
+        'Profil',
+        'Candidatures',
+        'Formations',
+        'Mentorat',
+      ],
+    };
+
+    const calendrier = {
+      events: [
+        ...sessionsAVenir.map((session) => ({
+          id: session.id,
+          title: `Session mentorat: ${session.sujet}`,
+          start: session.commenceLe,
+          end: session.termineLe ?? session.commenceLe,
+          type: 'MENTORAT',
+        })),
+        ...rappels.map((rappel) => ({
+          id: `${rappel.type}-${rappel.id}`,
+          title: rappel.titre,
+          start: rappel.dateEcheance,
+          end: rappel.dateEcheance,
+          type: rappel.type,
+        })),
+      ],
+    };
 
     const messages = await this.prisma.participantConversation.findMany({
       where: { utilisateurId },
@@ -188,6 +279,9 @@ export class TableauDeBordService {
         date: s.commenceLe,
         statut: s.statut,
       })),
+      rappels,
+      rapportPdf,
+      calendrier,
       activitesRecentes: notificationsRecentes.map((n) => ({
         id: n.id,
         type: n.type,
@@ -214,6 +308,16 @@ export class TableauDeBordService {
           })),
         };
       }),
+    };
+  }
+
+  async getCalendrier(utilisateurId: string) {
+    const vue = await this.getVueEnsemble(utilisateurId);
+    return {
+      utilisateurId,
+      calendrier: vue.calendrier,
+      sessionsAVenir: vue.sessionsAVenir,
+      rappels: vue.rappels,
     };
   }
 }

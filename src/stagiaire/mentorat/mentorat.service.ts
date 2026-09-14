@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreerDemandeMentoratDto } from './dto/creer-demande-mentorat.dto';
+import { CreerObjectifDto } from './dto/creer-objectif.dto';
+import { ModifierObjectifDto } from './dto/modifier-objectif.dto';
 
 @Injectable()
 export class MentoratStagiaireService {
@@ -83,6 +85,16 @@ export class MentoratStagiaireService {
   }
 
   async creerDemande(stagiaireId: string, donnees: CreerDemandeMentoratDto) {
+    let mentor: any = null;
+    if (donnees.mentorId) {
+      mentor = await this.prisma.user.findFirst({
+        where: { id: donnees.mentorId, role: 'MENTOR', isActive: true, deletedAt: null },
+      });
+      if (!mentor) {
+        throw new NotFoundException('Mentor introuvable ou inactif');
+      }
+    }
+
     const demande = await this.prisma.demandeMentorat.create({
       data: {
         stagiaireId,
@@ -112,7 +124,78 @@ export class MentoratStagiaireService {
       stagiaireId: demande.stagiaireId,
       mentorId: demande.mentorId,
       statut: demande.statut,
-      message: 'Demande de mentorat creee avec succes',
+      message: 'Demande de mentorat créée avec succès',
+    };
+  }
+
+  // ─── CRUD Objectifs ──────────────────────────────────────────────────────────
+
+  async listerObjectifs(stagiaireId: string) {
+    const objectifs = await this.prisma.objectifMentorat.findMany({
+      where: { utilisateurId: stagiaireId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { stagiaireId, objectifs };
+  }
+
+  async creerObjectif(stagiaireId: string, donnees: CreerObjectifDto) {
+    const objectif = await this.prisma.objectifMentorat.create({
+      data: {
+        utilisateurId: stagiaireId,
+        titre: donnees.titre,
+        statut: donnees.statut ?? 'pending',
+        creePar: stagiaireId,
+      },
+    });
+
+    return {
+      ...objectif,
+      message: 'Objectif créé avec succès',
+    };
+  }
+
+  async modifierObjectif(
+    stagiaireId: string,
+    objectifId: string,
+    donnees: ModifierObjectifDto,
+  ) {
+    const objectif = await this.prisma.objectifMentorat.findFirst({
+      where: { id: objectifId, utilisateurId: stagiaireId },
+    });
+
+    if (!objectif) {
+      throw new NotFoundException('Objectif introuvable');
+    }
+
+    const updated = await this.prisma.objectifMentorat.update({
+      where: { id: objectifId },
+      data: {
+        ...(donnees.titre !== undefined ? { titre: donnees.titre } : {}),
+        ...(donnees.statut !== undefined ? { statut: donnees.statut } : {}),
+      },
+    });
+
+    return {
+      ...updated,
+      message: 'Objectif mis à jour avec succès',
+    };
+  }
+
+  async supprimerObjectif(stagiaireId: string, objectifId: string) {
+    const objectif = await this.prisma.objectifMentorat.findFirst({
+      where: { id: objectifId, utilisateurId: stagiaireId },
+    });
+
+    if (!objectif) {
+      throw new NotFoundException('Objectif introuvable');
+    }
+
+    await this.prisma.objectifMentorat.delete({ where: { id: objectifId } });
+
+    return {
+      id: objectifId,
+      message: 'Objectif supprimé avec succès',
     };
   }
 }

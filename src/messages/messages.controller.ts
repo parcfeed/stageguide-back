@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreerConversationDto } from './dto/creer-conversation.dto';
 import { EnvoyerMessageDto } from './dto/envoyer-message.dto';
 import { MessagesService } from './messages.service';
 
@@ -16,6 +17,15 @@ export class MessagesController {
   @Get()
   async listerConversations(@CurrentUser() utilisateur: { id: string }) {
     return this.messagesService.listerConversations(utilisateur.id);
+  }
+
+  @ApiOperation({ summary: 'Cree une nouvelle conversation' })
+  @Post('conversations')
+  async creerConversation(
+    @CurrentUser() utilisateur: { id: string },
+    @Body() donnees: CreerConversationDto,
+  ) {
+    return this.messagesService.creerConversation(utilisateur.id, donnees);
   }
 
   @ApiOperation({ summary: 'Recupere le detail d une conversation' })

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -10,6 +10,9 @@ import { UpdateOffreStageDto } from './dto/update-offre-stage.dto';
 import { CreateOffreEmploiDto } from './dto/create-offre-emploi.dto';
 import { UpdateOffreEmploiDto } from './dto/update-offre-emploi.dto';
 import { PlanifierEntretienDto } from './dto/planifier-entretien.dto';
+import { ChangerStatutCandidatureDto } from './dto/changer-statut-candidature.dto';
+import { ChangerStatutEntretienDto } from './dto/changer-statut-entretien.dto';
+import { SoumettreEvaluationDto } from './dto/soumettre-evaluation.dto';
 import { EntrepriseService } from './entreprise.service';
 
 @ApiTags('entreprise')
@@ -36,6 +39,7 @@ export class EntrepriseController {
   }
 
   @ApiOperation({ summary: 'Met a jour une offre de stage existante' })
+  @ApiParam({ name: 'id', description: 'Identifiant de l offre de stage' })
   @Patch('offres-stage/:id')
   async modifierOffreStage(
     @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
@@ -46,6 +50,7 @@ export class EntrepriseController {
   }
 
   @ApiOperation({ summary: 'Archive une offre de stage de l entreprise' })
+  @ApiParam({ name: 'id', description: 'Identifiant de l offre de stage' })
   @Patch('offres-stage/:id/archive')
   async archiverOffreStage(
     @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
@@ -70,6 +75,7 @@ export class EntrepriseController {
   }
 
   @ApiOperation({ summary: 'Met a jour une offre d emploi existante' })
+  @ApiParam({ name: 'id', description: 'Identifiant de l offre d emploi' })
   @Patch('offres-emploi/:id')
   async modifierOffreEmploi(
     @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
@@ -80,6 +86,7 @@ export class EntrepriseController {
   }
 
   @ApiOperation({ summary: 'Archive une offre d emploi de l entreprise' })
+  @ApiParam({ name: 'id', description: 'Identifiant de l offre d emploi' })
   @Patch('offres-emploi/:id/archive')
   async archiverOffreEmploi(
     @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
@@ -88,10 +95,33 @@ export class EntrepriseController {
     return this.entrepriseService.archiverOffreEmploi(utilisateur, id);
   }
 
+  @ApiOperation({ summary: 'Retourne le tableau de bord de l entreprise connectee' })
+  @Get('tableau-de-bord')
+  async getTableauDeBord(@CurrentUser() utilisateur: { id: string; email: string; entreprise?: string }) {
+    return this.entrepriseService.getTableauDeBord(utilisateur);
+  }
+
+  @ApiOperation({ summary: 'Retourne les statistiques detaillees de l entreprise connectee' })
+  @Get('stats')
+  async getStats(@CurrentUser() utilisateur: { id: string; email: string; entreprise?: string }) {
+    return this.entrepriseService.getStats(utilisateur);
+  }
+
   @ApiOperation({ summary: 'Liste les candidatures recues pour les offres de l entreprise' })
   @Get('candidatures')
   async listerCandidatures(@CurrentUser() utilisateur: { id: string; email: string; entreprise?: string }) {
     return this.entrepriseService.listerCandidatures(utilisateur);
+  }
+
+  @ApiOperation({ summary: 'Change le statut d une candidature' })
+  @ApiParam({ name: 'id', description: 'Identifiant de la candidature' })
+  @Patch('candidatures/:id/statut')
+  async changerStatutCandidature(
+    @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
+    @Param('id') candidatureId: string,
+    @Body() donnees: ChangerStatutCandidatureDto,
+  ) {
+    return this.entrepriseService.changerStatutCandidature(utilisateur, candidatureId, donnees);
   }
 
   @ApiOperation({ summary: 'Liste les entretiens planifies par l entreprise' })
@@ -107,5 +137,33 @@ export class EntrepriseController {
     @Body() donnees: PlanifierEntretienDto,
   ) {
     return this.entrepriseService.planifierEntretien(utilisateur, donnees);
+  }
+
+  @ApiOperation({ summary: 'Soumet une evaluation croisee sur un stagiaire' })
+  @Post('evaluations')
+  async soumettreEvaluation(
+    @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
+    @Body() donnees: SoumettreEvaluationDto,
+  ) {
+    return this.entrepriseService.soumettreEvaluation(utilisateur, donnees);
+  }
+
+  @ApiOperation({ summary: 'Change le statut d un entretien' })
+  @ApiParam({ name: 'id', description: 'Identifiant de l entretien' })
+  @Patch('entretiens/:id/statut')
+  async changerStatutEntretien(
+    @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
+    @Param('id') entretienId: string,
+    @Body() donnees: ChangerStatutEntretienDto,
+  ) {
+    return this.entrepriseService.changerStatutEntretien(utilisateur, entretienId, donnees);
+  }
+
+  @ApiOperation({ summary: 'Statistiques détaillées de l entreprise' })
+  @Get('statistiques')
+  async getStatistiques(
+    @CurrentUser() utilisateur: { id: string; email: string; entreprise?: string },
+  ) {
+    return this.entrepriseService.getStatistiques(utilisateur);
   }
 }
