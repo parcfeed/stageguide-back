@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { User, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserRole } from '../users/enums/user-role.enum';
 import { CreateOffreStageDto } from './dto/create-offre-stage.dto';
 import { UpdateOffreStageDto } from './dto/update-offre-stage.dto';
 import { CreateOffreEmploiDto } from './dto/create-offre-emploi.dto';
@@ -19,6 +20,37 @@ type EntrepriseUser = {
 @Injectable()
 export class EntrepriseService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getProfil(utilisateurId: string) {
+    const utilisateur = await this.prisma.user.findFirst({
+      where: { id: utilisateurId, deletedAt: null, role: UserRole.ENTREPRISE },
+      select: {
+        id: true,
+        email: true,
+        prenom: true,
+        nom: true,
+        telephone: true,
+        entreprise: true,
+        poste: true,
+        bio: true,
+      },
+    });
+
+    if (!utilisateur) {
+      throw new NotFoundException('Profil entreprise introuvable');
+    }
+
+    return {
+      utilisateurId: utilisateur.id,
+      email: utilisateur.email,
+      prenom: utilisateur.prenom,
+      nom: utilisateur.nom,
+      telephone: utilisateur.telephone,
+      entreprise: utilisateur.entreprise,
+      poste: utilisateur.poste,
+      bio: utilisateur.bio,
+    };
+  }
 
   async listerOffresStage(utilisateur: EntrepriseUser) {
     const partenaire = await this.getPartnerOrNull(utilisateur);
@@ -746,7 +778,12 @@ export class EntrepriseService {
         ? Number((evaluations.reduce((sum, e) => sum + e.note, 0) / evaluations.length).toFixed(1))
         : null;
 
-    return {
+    const totalOffresStage = offresStageActives + offresStageArchivees;
+    const totalOffresEmploi = offresEmploiActives + offresEmploiArchivees;
+    const offresActives = offresStageActives + offresEmploiActives;
+    const offresArchivees = offresStageArchivees + offresEmploiArchivees;
+
+    const stats = {
       partenaire: {
         id: partenaire.id,
         nomEntreprise: partenaire.nomEntreprise,
@@ -756,14 +793,14 @@ export class EntrepriseService {
         stages: {
           actives: offresStageActives,
           archivees: offresStageArchivees,
-          total: offresStageActives + offresStageArchivees,
+          total: totalOffresStage,
         },
         emplois: {
           actives: offresEmploiActives,
           archivees: offresEmploiArchivees,
-          total: offresEmploiActives + offresEmploiArchivees,
+          total: totalOffresEmploi,
         },
-        totalActives: offresStageActives + offresEmploiActives,
+        totalActives: offresActives,
       },
       candidatures: {
         total: candidatures.length,
@@ -779,7 +816,21 @@ export class EntrepriseService {
         totalEvaluations: evaluations.length,
         noteMoyenne,
       },
+      totalOffresStage,
+      totalOffresEmploi,
+      offresActives,
+      offresArchivees,
+      totalCandidatures: candidatures.length,
+      candidaturesAcceptees: candidaturesParStatut.acceptees,
+      candidaturesRefusees: candidaturesParStatut.refusees,
+      candidaturesEnAttente: candidaturesParStatut.enAttente,
+      tauxAcceptation,
+      totalEntretiens: entretiens.length,
+      entretiensConfirmes: entretiensParStatut.confirmes,
+      satisfactionMoyenne: noteMoyenne,
     };
+
+    return stats;
   }
 
   private async notifierAbonnesAlertes(

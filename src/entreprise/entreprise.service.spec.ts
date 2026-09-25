@@ -97,6 +97,53 @@ describe('EntrepriseService', () => {
     expect(result.candidatures.parStatut.EN_ATTENTE).toBe(5);
   });
 
+  it('should expose flat KPI fields compatible with the recruiter dashboard', async () => {
+    const prisma = {
+      partner: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'partner-1', nomEntreprise: 'Acme', ville: 'Paris' }),
+      },
+      offreStage: {
+        count: jest.fn().mockResolvedValueOnce(2).mockResolvedValueOnce(1),
+      },
+      offreEmploi: {
+        count: jest.fn().mockResolvedValueOnce(3).mockResolvedValueOnce(2),
+      },
+      candidature: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'c1', statut: 'EN_ATTENTE' },
+          { id: 'c2', statut: 'ACCEPTEE' },
+          { id: 'c3', statut: 'REFUSEE' },
+        ]),
+      },
+      entretien: {
+        findMany: jest.fn().mockResolvedValue([
+          { id: 'e1', statut: 'PROPOSE' },
+          { id: 'e2', statut: 'CONFIRME' },
+          { id: 'e3', statut: 'CONFIRME' },
+        ]),
+      },
+      evaluationCroisee: {
+        findMany: jest.fn().mockResolvedValue([{ note: 4 }, { note: 5 }]),
+      },
+    };
+
+    const service = new EntrepriseService(prisma as any);
+
+    const result = await service.getStatistiques({ id: 'user-1', email: 'contact@acme.fr', entreprise: 'Acme' });
+
+    expect(result.totalOffresStage).toBe(3);
+    expect(result.totalOffresEmploi).toBe(5);
+    expect(result.offresActives).toBe(5);
+    expect(result.offresArchivees).toBe(3);
+    expect(result.totalCandidatures).toBe(3);
+    expect(result.candidaturesEnAttente).toBe(1);
+    expect(result.candidaturesAcceptees).toBe(1);
+    expect(result.tauxAcceptation).toBe(33);
+    expect(result.totalEntretiens).toBe(3);
+    expect(result.entretiensConfirmes).toBe(2);
+    expect(result.satisfactionMoyenne).toBe(4.5);
+  });
+
   it('should return empty lists instead of 404 when an enterprise has no partner yet', async () => {
     const prisma = {
       partner: {

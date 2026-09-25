@@ -33,6 +33,30 @@ export class MentoratMentorService {
     };
   }
 
+  async listerSessions(mentorId: string) {
+    const sessions = await this.prisma.sessionMentorat.findMany({
+      where: { mentorId },
+      include: {
+        stagiaire: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            email: true,
+            ecole: true,
+            niveauEtudes: true,
+          },
+        },
+      },
+      orderBy: { commenceLe: 'asc' },
+    });
+
+    return {
+      mentorId,
+      sessions,
+    };
+  }
+
   async repondre(
     mentorId: string,
     demandeId: string,
@@ -206,13 +230,25 @@ export class MentoratMentorService {
       throw new NotFoundException('Session introuvable ou non autorisée');
     }
 
+    const escapeIcalText = (value: string) =>
+      value
+        .replace(/\\/g, '\\\\')
+        .replace(/;/g, '\\;')
+        .replace(/,/g, '\\,')
+        .replace(/\n/g, '\\n');
+
     const formatDate = (d: Date) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
     const startStr = formatDate(session.commenceLe);
     const endStr = session.termineLe
       ? formatDate(session.termineLe)
       : formatDate(new Date(session.commenceLe.getTime() + 3600000));
 
-    const icalContent = [
+    const summary = escapeIcalText(session.sujet ?? 'Session de mentorat');
+    const description = escapeIcalText(
+      `Session de mentorat avec ${session.stagiaire?.prenom ?? ''} ${session.stagiaire?.nom ?? ''}`.trim(),
+    );
+
+    return [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
       'PRODID:-//StageGuide//Mentorat//FR',
@@ -223,18 +259,11 @@ export class MentoratMentorService {
       `DTSTAMP:${formatDate(new Date())}`,
       `DTSTART:${startStr}`,
       `DTEND:${endStr}`,
-      `SUMMARY:${session.sujet}`,
-      `DESCRIPTION:Session de mentorat avec ${session.stagiaire.prenom} ${session.stagiaire.nom}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${description}`,
       'STATUS:CONFIRMED',
       'END:VEVENT',
       'END:VCALENDAR',
     ].join('\r\n');
-
-    return {
-      sessionId: session.id,
-      filename: `session-${session.id}.ics`,
-      mimeType: 'text/calendar',
-      icalContent,
-    };
   }
 }

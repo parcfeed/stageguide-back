@@ -204,8 +204,6 @@ export class MessagesService {
         expediteurId: m.expediteurId,
         expediteurNom: `${m.expediteur.prenom} ${m.expediteur.nom}`,
         contenu: m.contenu,
-        fichierId: m.fichierId ?? null,
-        lienRessource: m.lienRessource ?? null,
         estSysteme: m.estSysteme,
         creeLe: m.creeLe,
       })),
@@ -230,8 +228,6 @@ export class MessagesService {
         conversationId,
         expediteurId: utilisateurId,
         contenu: donnees.contenu,
-        fichierId: donnees.fichierId ?? null,
-        lienRessource: donnees.lienRessource ?? null,
       },
     });
 
@@ -266,8 +262,6 @@ export class MessagesService {
       conversationId: message.conversationId,
       expediteurId: message.expediteurId,
       contenu: message.contenu,
-      fichierId: message.fichierId ?? null,
-      lienRessource: message.lienRessource ?? null,
       creeLe: message.creeLe,
     };
   }

@@ -13,11 +13,33 @@ describe('CvService', () => {
           ecole: 'Université Lyon',
           niveauEtudes: 'Master 2',
           bio: 'Étudiante en informatique',
-          cv: { titre: 'CV développeuse', resume: 'Résumé', formationResume: 'Master', experienceResume: 'Stage' },
+          cv: {
+            titre: 'CV développeuse',
+            resume: 'Résumé',
+            formationResume: 'Master',
+            experienceResume: 'Stage',
+          },
           competences: [
-            { competence: { id: 'c1', nom: 'TypeScript', categorie: 'Frontend' }, niveau: 4 },
+            {
+              competence: {
+                id: 'c1',
+                nom: 'TypeScript',
+                categorie: 'Frontend',
+              },
+              niveau: 4,
+            },
           ],
           projetsPortfolio: [{ id: 'p1', titre: 'Projet StageGuide' }],
+          experiencesProfessionnelles: [
+            {
+              id: 'e1',
+              titrePoste: 'Développeuse stagiaire',
+              entrepriseNom: 'Acme',
+              description: 'API NestJS',
+              dateDebut: new Date('2026-01-05'),
+              dateFin: new Date('2026-06-30'),
+            },
+          ],
         }),
       },
       certificat: {
@@ -34,5 +56,8 @@ describe('CvService', () => {
     const shared = await service.getSharedCvByToken(token);
     expect(shared).toHaveProperty('utilisateurId', 'user-1');
     expect(shared.profil.prenom).toBe('Alice');
+    expect(shared.experiences).toHaveLength(1);
+    expect(shared.experiences[0].titrePoste).toBe('Développeuse stagiaire');
+    expect(shared.experiences[0].entrepriseNom).toBe('Acme');
   });
 });

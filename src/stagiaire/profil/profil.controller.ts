@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -12,18 +12,26 @@ import { ProfilStagiaireService } from './profil.service';
 @ApiBearerAuth()
 @Controller('stagiaire/profil')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.STAGIAIRE)
 export class ProfilStagiaireController {
   constructor(private readonly profilStagiaireService: ProfilStagiaireService) {}
 
   @ApiOperation({ summary: 'Recupere le profil stagiaire' })
+  @Roles(UserRole.STAGIAIRE)
   @Get()
   async getProfil(@CurrentUser() utilisateur: { id: string }) {
     return this.profilStagiaireService.getProfil(utilisateur.id);
   }
 
+  @ApiOperation({ summary: 'Recupere le profil d un stagiaire cible pour un profil autorise' })
+  @Roles(UserRole.STAGIAIRE, UserRole.MENTOR, UserRole.ENTREPRISE)
+  @Get(':utilisateurId')
+  async getProfilById(@Param('utilisateurId') utilisateurId: string) {
+    return this.profilStagiaireService.getProfilById(utilisateurId);
+  }
+
   @ApiOperation({ summary: 'Met a jour le profil stagiaire' })
   @ApiResponse({ status: 200, description: 'Profil mis a jour avec succes' })
+  @Roles(UserRole.STAGIAIRE)
   @Patch()
   async modifierProfil(
     @CurrentUser() utilisateur: { id: string },

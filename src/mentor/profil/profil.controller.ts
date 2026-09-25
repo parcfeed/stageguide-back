@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -12,17 +12,25 @@ import { ProfilMentorService } from './profil.service';
 @ApiBearerAuth()
 @Controller('mentor/profil')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.MENTOR)
 export class ProfilMentorController {
   constructor(private readonly profilMentorService: ProfilMentorService) {}
 
   @ApiOperation({ summary: 'Recupere le profil mentor' })
+  @Roles(UserRole.MENTOR)
   @Get()
   async getProfil(@CurrentUser() utilisateur: { id: string }) {
     return this.profilMentorService.getProfil(utilisateur.id);
   }
 
+  @ApiOperation({ summary: 'Recupere le profil d un mentor cible pour un profil autorise' })
+  @Roles(UserRole.STAGIAIRE, UserRole.MENTOR, UserRole.ENTREPRISE)
+  @Get(':utilisateurId')
+  async getProfilById(@Param('utilisateurId') utilisateurId: string) {
+    return this.profilMentorService.getProfilById(utilisateurId);
+  }
+
   @ApiOperation({ summary: 'Met a jour le profil mentor' })
+  @Roles(UserRole.MENTOR)
   @Patch()
   async modifierProfil(
     @CurrentUser() utilisateur: { id: string },

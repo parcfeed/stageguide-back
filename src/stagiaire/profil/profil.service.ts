@@ -14,12 +14,14 @@ export class ProfilStagiaireService {
       },
       select: {
         id: true,
+        email: true,
         prenom: true,
         nom: true,
         telephone: true,
         ecole: true,
         niveauEtudes: true,
         bio: true,
+        role: true,
       },
     });
 
@@ -29,13 +31,19 @@ export class ProfilStagiaireService {
 
     return {
       utilisateurId: utilisateur.id,
+      email: utilisateur.email,
       prenom: utilisateur.prenom,
       nom: utilisateur.nom,
       telephone: utilisateur.telephone,
       ecole: utilisateur.ecole,
       niveauEtudes: utilisateur.niveauEtudes,
       bio: utilisateur.bio,
+      role: utilisateur.role,
     };
+  }
+
+  async getProfilById(utilisateurId: string) {
+    return this.getProfil(utilisateurId);
   }
 
   async modifierProfil(
@@ -52,23 +60,27 @@ export class ProfilStagiaireService {
       },
       select: {
         id: true,
+        email: true,
         prenom: true,
         nom: true,
         telephone: true,
         ecole: true,
         niveauEtudes: true,
         bio: true,
+        role: true,
       },
     });
 
     return {
       utilisateurId: utilisateur.id,
+      email: utilisateur.email,
       prenom: utilisateur.prenom,
       nom: utilisateur.nom,
       telephone: utilisateur.telephone,
       ecole: utilisateur.ecole,
       niveauEtudes: utilisateur.niveauEtudes,
       bio: utilisateur.bio,
+      role: utilisateur.role,
       message: 'Profil stagiaire mis a jour avec succes',
     };
   }

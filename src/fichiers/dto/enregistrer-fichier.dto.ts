@@ -4,7 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
-  IsUrl,
+  Matches,
   MinLength,
   Min,
 } from 'class-validator';
@@ -29,9 +29,15 @@ export class EnregistrerFichierDto {
   @MinLength(1)
   typeMime!: string;
 
-  @ApiPropertyOptional({ example: 'https://stockage.example.com/fichier.pdf' })
+  @ApiPropertyOptional({
+    example: 'data:application/pdf;base64,JVBERi0xLjQK',
+    description: 'URL externe ou URL de données du fichier attaché.',
+  })
   @IsOptional()
-  @IsUrl({ require_protocol: true })
+  @IsString()
+  @Matches(/^(https?:\/\/|data:)/i, {
+    message: 'url must be a valid URL or a data URL',
+  })
   url?: string;
 
   @ApiPropertyOptional({

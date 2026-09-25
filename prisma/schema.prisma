@@ -618,8 +618,6 @@ model MessageConversation {
   conversationId  String
   expediteurId    String
   contenu         String
-  fichierId       String?
-  lienRessource   String?
   estSysteme      Boolean  @default(false)
   creeLe          DateTime @default(now())
   conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

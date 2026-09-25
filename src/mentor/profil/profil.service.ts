@@ -14,12 +14,14 @@ export class ProfilMentorService {
       },
       select: {
         id: true,
+        email: true,
         prenom: true,
         nom: true,
         telephone: true,
         entreprise: true,
         poste: true,
         bio: true,
+        role: true,
       },
     });
 
@@ -29,13 +31,19 @@ export class ProfilMentorService {
 
     return {
       utilisateurId: utilisateur.id,
+      email: utilisateur.email,
       prenom: utilisateur.prenom,
       nom: utilisateur.nom,
       telephone: utilisateur.telephone,
       entreprise: utilisateur.entreprise,
       poste: utilisateur.poste,
       bio: utilisateur.bio,
+      role: utilisateur.role,
     };
+  }
+
+  async getProfilById(utilisateurId: string) {
+    return this.getProfil(utilisateurId);
   }
 
   async modifierProfil(utilisateurId: string, modification: ModifierProfilMentorDto) {
@@ -49,23 +57,27 @@ export class ProfilMentorService {
       },
       select: {
         id: true,
+        email: true,
         prenom: true,
         nom: true,
         telephone: true,
         entreprise: true,
         poste: true,
         bio: true,
+        role: true,
       },
     });
 
     return {
       utilisateurId: utilisateur.id,
+      email: utilisateur.email,
       prenom: utilisateur.prenom,
       nom: utilisateur.nom,
       telephone: utilisateur.telephone,
       entreprise: utilisateur.entreprise,
       poste: utilisateur.poste,
       bio: utilisateur.bio,
+      role: utilisateur.role,
       message: 'Profil mentor mis a jour avec succes',
     };
   }

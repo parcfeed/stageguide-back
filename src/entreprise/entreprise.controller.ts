@@ -95,6 +95,20 @@ export class EntrepriseController {
     return this.entrepriseService.archiverOffreEmploi(utilisateur, id);
   }
 
+  @ApiOperation({ summary: 'Retourne le profil de l entreprise' })
+  @Roles(UserRole.ENTREPRISE, UserRole.STAGIAIRE, UserRole.MENTOR)
+  @Get('profil')
+  async getMonProfil(@CurrentUser() utilisateur: { id: string; email: string; entreprise?: string }) {
+    return this.entrepriseService.getProfil(utilisateur.id);
+  }
+
+  @ApiOperation({ summary: 'Retourne le profil d une entreprise cible pour un profile autorise' })
+  @Roles(UserRole.ENTREPRISE, UserRole.STAGIAIRE, UserRole.MENTOR)
+  @Get('profil/:id')
+  async getProfilParId(@Param('id') id: string) {
+    return this.entrepriseService.getProfil(id);
+  }
+
   @ApiOperation({ summary: 'Retourne le tableau de bord de l entreprise connectee' })
   @Get('tableau-de-bord')
   async getTableauDeBord(@CurrentUser() utilisateur: { id: string; email: string; entreprise?: string }) {

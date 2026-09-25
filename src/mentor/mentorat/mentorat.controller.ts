@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -35,6 +35,12 @@ export class MentoratMentorController {
     return this.mentoratService.repondre(utilisateur.id, demandeId, donnees);
   }
 
+  @ApiOperation({ summary: 'Liste les sessions planifiées par le mentor' })
+  @Get('sessions')
+  async listerSessions(@CurrentUser() utilisateur: { id: string }) {
+    return this.mentoratService.listerSessions(utilisateur.id);
+  }
+
   @ApiOperation({ summary: 'Planifie une session de mentorat avec un stagiaire' })
   @Post('sessions')
   async planifierSession(
@@ -55,6 +61,8 @@ export class MentoratMentorController {
 
   @ApiOperation({ summary: 'Exporte une session de mentorat au format iCal (.ics)' })
   @ApiParam({ name: 'id', description: 'Identifiant de la session de mentorat' })
+  @Header('Content-Type', 'text/calendar; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="session-mentorat.ics"')
   @Get('sessions/:id/ical')
   async exportIcal(
     @CurrentUser() utilisateur: { id: string },
